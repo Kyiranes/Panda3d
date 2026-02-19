@@ -1,6 +1,5 @@
 from direct.showbase.ShowBase import ShowBase
-
-
+import sys
 class MyApp(ShowBase):
 
     def __init__(self):
@@ -26,7 +25,7 @@ class MyApp(ShowBase):
 
         self.Planet3 = self.loader.loadModel("./Assets/Planets/Planet3/protoPlanet.x")
         self.Planet3.reparentTo(self.render)
-        self.Planet3.setPos(850, 2000, 270)
+        self.Planet3.setPos(850, 1000, 270)
         self.Planet3.setScale(350)
         tex = self.loader.loadTexture("./Assets/Planets/Planet3/Planet3.jpg")
         self.Planet3.setTexture(tex, 1)
@@ -54,18 +53,19 @@ class MyApp(ShowBase):
         
         self.spaceStation = self.loader.loadModel("./Assets/SpaceStation/spaceStation.x")
         self.spaceStation.reparentTo(self.render)
-        self.spaceStation.setPos(100, 1000, 250)
+        self.spaceStation.setPos(2000, 1000, 250)
         self.spaceStation.setScale(50)
         tex = self.loader.loadTexture("./Assets/SpaceStation/SpaceStation1_Dif2.png")
         self.spaceStation.setTexture(tex, 1)
         self.spaceShip = self.loader.loadModel("./Assets/Spaceships/Phaser/phaser.x")
         self.spaceShip.reparentTo(self.render)
-        self.spaceShip.setPos(0, 0, 0)
+        self.spaceShip.setPos(3000, 1000, 50)
         self.spaceShip.setScale(50)
         tex = self.loader.loadTexture("./Assets/Spaceships/Phaser/phaser_auv.jpg")
         self.spaceShip.setTexture(tex, 1)
+        self.accept("escape",self.quit)
 
-
-
+    def quit(self):
+            sys.exit()
 app = MyApp()
 app.run()
