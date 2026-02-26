@@ -4,11 +4,7 @@ class MyApp(ShowBase):
 
     def __init__(self):
         ShowBase.__init__(self)
-        self.Universe = self.loader.loadModel("./Assets/Universe/Universe.x")
-        self.Universe.reparentTo(self.render)
-        self.Universe.setScale(15000)
-        tex = self.loader.loadTexture("./Assets/Universe/Universe.jpg")
-        self.Universe.setTexture(tex, 1)
+        self.Universe = Universe(self.loader,self.render)
         self.Planet1 = self.loader.loadModel("./Assets/Planets/Planet1/protoPlanet.x")
         self.Planet1.reparentTo(self.render)
         self.Planet1.setPos(150, 5000, 7)
@@ -67,5 +63,15 @@ class MyApp(ShowBase):
 
     def quit(self):
             sys.exit()
+class Universe:
+     def __init__(self,loader,render):
+          self.model = loader.loadModel("./Assets/Universe/Universe.x")
+          self.model.reparentTo(render)
+          self.model.setScale(15000)
+          tex = loader.loadTexture("./Assets/Universe/Universe.jpg")
+          self.model.setTexture(tex, 1)
+class Planet: 
+    
+          
 app = MyApp()
 app.run()
