@@ -274,7 +274,7 @@ class Player(SphereCollideObject, ShowBase):
 
 class TheISSIGuess(CapsuleCollidableObject):
       def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(TheISSIGuess,self).__init__(loader,modelPath,parentNode,nodeName,1,-1,5,1,-1,-5,3)
+          super(TheISSIGuess,self).__init__(loader,modelPath,parentNode,nodeName,1,-1,5,1,-1,-5,5)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
