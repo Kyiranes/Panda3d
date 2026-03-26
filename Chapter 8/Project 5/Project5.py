@@ -61,7 +61,7 @@ class InverseSphereCollideObject(CollidableObject):
 class CapsuleCollidableObject(CollidableObject):
      def __init__(self,loader:Loader,modelPath:str,parentNode: NodePath, nodeName: str, ax: float, ay: float, az: float, bx: float, by: float, bz:float, r: float):
           super(CapsuleCollidableObject,self).__init__(loader,modelPath,parentNode,nodeName)
-          self.collisionNode.node().addSolid(CollisionCapsule(ax,ay,az,bz,by,bz,r))
+          self.collisionNode.node().addSolid(CollisionCapsule(ax, ay, az, bx, by, bz, r))
 class SphereCollideObject(CollidableObject):
      def __init__(self, loader:Loader, modelPath:str, parentNode: NodePath, nodeName: str, colPositionVec: Vec3, colRadius: float):
           super(SphereCollideObject,self).__init__(loader,modelPath,parentNode,nodeName)
@@ -77,7 +77,7 @@ class MyApp(ShowBase):
         self.Planet3 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet3/protoPlanet.x",self.render,"Planet3","./Assets/Planets/Planet3/Planet3.png", (-1000, 2000, 174), 100)
         self.Planet4 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet4/protoPlanet.x",self.render,"Planet4","./Assets/Planets/Planet4/Planet4.png", (850, 7000, 270), 400)
         self.Planet5 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet5/protoPlanet.x",self.render,"Planet5","./Assets/Planets/Planet5/Planet5.png", (450, 3000, 245), 600)
-        self.Planet6 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet6/protoPlanet.x",self.render,"Planet6","./Assets/Planets/Planet6/Planet6.png", (1500, 5000, 800), 500)
+        self.Planet6 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet6/protoPlanet.x",self.render,"Planet6","./Assets/Planets/Planet6/Planet6.png", (1500, 6000, 1000), 500)
         self.Player = Player(self.loader, "./Assets/Spaceships/Phaser/phaser.x",self.render,"Player","./Assets/Spaceships/Phaser/phaserII.jpg", (100, 100, 100), 60)
         self.Spacestation = TheISSIGuess(self.loader, "./Assets/SpaceStation/spaceStation.x", self.render, "Space Station", "./Assets/SpaceStation/SpaceStation1_Dif2.png", (3000, 2000, 1000),300)
         self.accept("escape",self.quit)
@@ -99,7 +99,7 @@ class MyApp(ShowBase):
                Drone.droneCount += 1
                nickName = "Drone" + str(Drone.droneCount)
                self.DrawCloudDefense(self.Planet1, nickName)
-               self.DrawBaseballSeams(self.Spacestation, nickName, j, fullCycle, 2)
+               self.DrawBaseballSeams(self.Spacestation, nickName, j, fullCycle, 5)
                self.DrawCircleXDefense(self.Planet2, nickName, j, fullCycle, 2)
                self.DrawCircleYDefense(self.Planet3, nickName, j, fullCycle, 2)
                self.DrawCircleZDefense(self.Planet4, nickName, j, fullCycle, 2)
@@ -152,7 +152,7 @@ class MyApp(ShowBase):
 
 class PoorlyRenderedUniverse(InverseSphereCollideObject):
       def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(PoorlyRenderedUniverse,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.1)
+          super(PoorlyRenderedUniverse,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.3)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
@@ -160,7 +160,7 @@ class PoorlyRenderedUniverse(InverseSphereCollideObject):
           self.modelNode.setTexture(tex,1)
 class GalaxyPlanet(SphereCollideObject): 
      def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(GalaxyPlanet,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1)
+          super(GalaxyPlanet,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.1)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
@@ -321,7 +321,7 @@ class Player(SphereCollideObject, ShowBase):
 
 class TheISSIGuess(CapsuleCollidableObject):
       def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(TheISSIGuess,self).__init__(loader,modelPath,parentNode,nodeName,1,-1,5,1,-1,-5,5)
+          super(TheISSIGuess, self).__init__(loader, modelPath, parentNode, nodeName, 0, 1, 0, 0, -12, 0, 3)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
