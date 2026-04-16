@@ -1,8 +1,10 @@
+
 from direct.showbase.ShowBase import ShowBase, taskMgr
 from direct.showbase.DirectObject import DirectObject
-from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import Vec3, NodePath, Loader, PandaNode, CollisionNode, CollisionSphere, CollisionCapsule, CollisionTraverser, CollisionHandlerPusher, CollisionInvSphere
 from panda3d.core import TransparencyAttrib, CollisionHandlerEvent, CardMaker, TextureStage, Geom, GeomTriangles, ClockObject
+from direct.interval.IntervalGlobal import Sequence
+import re,time
 from direct.task import Task
 import sys
 import math,random
@@ -14,6 +16,7 @@ def Cloud(radius = 1):
                unitVec = Vec3(x,y,z)
                unitVec.normalize()
                return unitVec * radius
+               
 def BaseballSeams(step,numDrones,B, F = 1):
                time = step / float(numDrones) * 2 * math.pi
                F4 = 0
@@ -81,94 +84,174 @@ class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         self.orbitPivots = []
-        self.Universe = PoorlyRenderedUniverse(self.loader, "./Assets/Universe/Universe.x",self.render,"Universe","./Assets/Universe/Universe.jpg",(0,0,0), 10000)
-        self.Planet1 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet1/protoPlanet.x",self.render,"Planet1","./Assets/Planets/Planet1/Planet1.png", (1150, 5000, 7), 250)
-        self.Planet2 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet2/protoPlanet.x",self.render,"Planet2","./Assets/Planets/Planet2/Planet2.png", (500, 9000, 700), 400)
-        self.Planet3 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet3/protoPlanet.x",self.render,"Planet3","./Assets/Planets/Planet3/Planet3.png", (-1000, 2000, 174), 100)
-        self.Planet4 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet4/protoPlanet.x",self.render,"Planet4","./Assets/Planets/Planet4/Planet4.png", (850, 7000, 270), 400)
-        self.Planet5 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet5/protoPlanet.x",self.render,"Planet5","./Assets/Planets/Planet5/Planet5.png", (450, 3000, 245), 600)
-        self.Planet6 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet6/protoPlanet.x",self.render,"Planet6","./Assets/Planets/Planet6/Planet6.png", (1500, 6000, 1000), 500)
+        self.Universe = PoorlyRenderedUniverse(self.loader, "./Assets/Universe/Universe.x",self.render,"Universe","./Assets/Universe/Universe.jpg",(0,0,0), 20000)
+        self.Sun = Sun(self.loader, "./Assets/Sun/sun.x", self.render, "Sun", "./Assets/Sun/sun.jpg", (7000, 0, 3000), 1500)
+        sunPos = self.Sun.modelNode.getPos()
+        self.p1Pivot = self.render.attachNewNode("Planet1-Orbit")
+        self.p1Pivot.setPos(sunPos)
+        self.Planet1 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet1/protoPlanet.x",self.p1Pivot,"Planet1","./Assets/Planets/Planet1/Planet1.png", Vec3(1150, 5000, 7) - sunPos, 250)
+        self.p2Pivot = self.render.attachNewNode("Planet2-Orbit")
+        self.p2Pivot.setPos(sunPos)
+        self.Planet2 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet2/protoPlanet.x",self.p2Pivot,"Planet2","./Assets/Planets/Planet2/Planet2.png", Vec3(500, 9000, 700) - sunPos, 400)
+        self.p3Pivot = self.render.attachNewNode("Planet3-Orbit")
+        self.p3Pivot.setPos(sunPos)
+        self.Planet3 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet3/protoPlanet.x",self.p3Pivot,"Planet3","./Assets/Planets/Planet3/Planet3.png", Vec3(-1000, 2000, 174) - sunPos, 100)
+        self.p4Pivot = self.render.attachNewNode("Planet4-Orbit")
+        self.p4Pivot.setPos(sunPos)
+        self.Planet4 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet4/protoPlanet.x",self.p4Pivot,"Planet4","./Assets/Planets/Planet4/Planet4.png", Vec3(850, 7000, 270) - sunPos, 400)
+        self.p5Pivot = self.render.attachNewNode("Planet5-Orbit")
+        self.p5Pivot.setPos(sunPos)
+        self.Planet5 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet5/protoPlanet.x",self.p5Pivot,"Planet5","./Assets/Planets/Planet5/Planet5.png", Vec3(450, 3000, 245) - sunPos, 600)
+        self.p6Pivot = self.render.attachNewNode("Planet6-Orbit")
+        self.p6Pivot.setPos(sunPos)
+        self.Planet6 = GalaxyPlanet(self.loader,"./Assets/Planets/Planet6/protoPlanet.x",self.p6Pivot,"Planet6","./Assets/Planets/Planet6/Planet6.png", Vec3(1500, 10000, 500) - sunPos, 800)
+        self.spPivot = self.render.attachNewNode("Spacestation-Orbit")
+        self.spPivot.setPos(sunPos)
+        self.Spacestation = TheISSIGuess(self.loader,"./Assets/SpaceStation/spaceStation.x",self.spPivot,"Space Station", "./Assets/SpaceStation/SpaceStation1_Dif2.png", Vec3(1200, 6000, 900) - sunPos, 100)
         self.cTrav = CollisionTraverser()
         self.pusher = CollisionHandlerPusher()
         self.Rock = Rock(self.loader, "./Assets/Rock/Rock.x",self.render, "Rock", "./Assets/Rock/Rock.png", Vec3(100, 100, 100), 60)
-        self.Player = Player(self.loader, "./Assets/Spaceships/Phaser/phaser.x",self.render, "Player", "./Assets/Spaceships/Phaser/phaserII.jpg", Vec3(100, 100, 100), 60, self.cTrav)
-        self.Spacestation = TheISSIGuess(self.loader, "./Assets/SpaceStation/spaceStation.x", self.render, "Space Station", "./Assets/SpaceStation/SpaceStation1_Dif2.png", (3000, 2000, 1000),300)
+        self.Player = Player(self.loader, "./Assets/Spaceships/Phaser/phaser.x",self.render, "Player", "./Assets/Spaceships/Phaser/phaserII.jpg", Vec3(0, 0, 0), 60, self.cTrav)
+        self.Wanderer1 = Wanderer(self.loader, "./Assets/DroneDefender/DroneDefender.obj", self.render, "Drone", 3.0, "./Assets/DroneDefender/octotoad1_auv.png", self.Player)
+        self.Wanderer2 = Wanderer(self.loader, "./Assets/DroneDefender/DroneDefender.obj", self.render, "Drone", 5.0, "./Assets/DroneDefender/octotoad1_auv.png", self.Player)
         self.accept("escape",self.quit)
         fullCycle = 60
         self.cTrav.traverse(self.render)
         self.pusher.addCollider(self.Player.collisionNode, self.Player.modelNode)
         self.pusher.addCollider(self.Spacestation.collisionNode, self.Spacestation.modelNode)
         self.cTrav.addCollider(self.Player.collisionNode, self.pusher)
-        self.cTrav.showCollisions(self.render)
-        self.drawRockRing(self.Planet5, "Rock", 20, 4)
+        base.cTrav = self.cTrav 
+        self.drawRockRing(self.Planet5, "PlanetRock", 20, 4)
+        self.drawRockRing(self.Sun, "SunRock", 40, 13)
+        self.orbitPivots.append((self.p1Pivot, 0.15))
+        self.orbitPivots.append((self.p2Pivot, 0.05))
+        self.orbitPivots.append((self.p3Pivot, 0.2))
+        self.orbitPivots.append((self.p4Pivot, 0.08))
+        self.orbitPivots.append((self.p5Pivot, 0.12))
+        self.orbitPivots.append((self.p6Pivot, 0.04))
         self.SetCamera(self.Player)
         taskMgr.add(self.updateAllOrbits, "updateOrbitsTask")
-        for j in range(fullCycle):
-               Drone.droneCount += 1
-               nickName = "Drone" + str(Drone.droneCount)
-               self.DrawCloudDefense(self.Planet1, nickName)
-               self.DrawBaseballSeams(self.Spacestation, nickName, j, fullCycle, 5)
-               self.DrawCircleXDefense(self.Planet2, nickName, j, fullCycle, 2)
-               self.DrawCircleYDefense(self.Planet3, nickName, j, fullCycle, 2)
-               self.DrawCircleZDefense(self.Planet4, nickName, j, fullCycle, 2)   
-        
-    
-    
+        taskMgr.doMethodLater(1.0, self.launchRock, "launchRockTask")
+        self.DrawCloudDefense(self.Planet1, "Cloud", fullCycle)
+        self.DrawBaseballSeams(self.Spacestation, "Seams", fullCycle, 7)
+        self.DrawCloudDefense(self.Planet2, "Cloud2", fullCycle)
+        self.DrawBaseballSeams(self.Planet3, "Seams2", fullCycle, 2)
+        self.DrawCircleZDefense(self.Planet4, "CircleZ", fullCycle, 2)
+        fps_limit = 60
+        globalClock.setMode(ClockObject.MLimited)
+        globalClock.setFrameRate(fps_limit)
     def quit(self):
             sys.exit()
-    def DrawBaseballSeams(self,centralObject, droneName, step, numDrones, radius = 1):
-         unitVec = BaseballSeams(step,numDrones, B = 0.4)
-         unitVec.normalize()
-         relPos = unitVec * radius * 250
-         pivot = self.render.attachNewNode(droneName + "-pivot")
-         pivot.setPos(centralObject.modelNode.getPos())
-         Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
-         self.orbitPivots.append((pivot, 0.2))
+    def DrawBaseballSeams(self, centralObject, groupName, numDrones, radius = 1):
+         pivot = centralObject.modelNode.attachNewNode(groupName + "-pivot")
+         pivot.setScale(self.render, 1)
+         pivot.setPos(0, 0, 0)
+         for i in range(numDrones):
+              Drone.droneCount += 1
+              droneName = groupName + str(Drone.droneCount)
+              unitVec = BaseballSeams(i, numDrones, B = 0.4)
+              unitVec.normalize()
+              relPos = unitVec * radius * 250
+              Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
+         self.orbitPivots.append((pivot, 0.02))
 
-    def DrawCloudDefense(self, centralObject, droneName):
-         unitVec = Cloud()
-         unitVec.normalize()
-         relPos = unitVec * 500
-         pivot = self.render.attachNewNode(droneName + "-pivot")
-         pivot.setPos(centralObject.modelNode.getPos())
-         Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 10)
-         self.orbitPivots.append((pivot, 0.2))
+    def DrawCloudDefense(self, centralObject, groupName, numDrones):
+         pivot = centralObject.modelNode.attachNewNode(groupName + "-pivot")
+         pivot.setScale(self.render, 1)
+         pivot.setPos(0, 0, 0)
+         pivot.setP(random.uniform(0, 360))
+         pivot.setR(random.uniform(0, 360))
+         for i in range(numDrones):
+              Drone.droneCount += 1
+              droneName = groupName + str(Drone.droneCount)
+              unitVec = Cloud()
+              unitVec.normalize()
+              relPos = unitVec * 500
+              Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 10)
+         self.orbitPivots.append((pivot, 0.02))
          
-    def DrawCircleZDefense(self, centralObject, droneName, step, numDrones, radius = 1):
-         unitVec = CircleZ(step, numDrones)
-         unitVec.normalize()
-         relPos = unitVec * radius * 250
-         pivot = self.render.attachNewNode(droneName + "-pivot")
-         pivot.setPos(centralObject.modelNode.getPos())
-         Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
-         self.orbitPivots.append((pivot, 0.2))
+    def DrawCircleZDefense(self, centralObject, groupName, numDrones, radius = 1):
+         pivot = centralObject.modelNode.attachNewNode(groupName + "-pivot")
+         pivot.setScale(self.render, 1)
+         pivot.setPos(0, 0, 0)
+         pivot.setP(random.uniform(0, 360))
+         pivot.setR(random.uniform(0, 360))
+         for i in range(numDrones):
+              Drone.droneCount += 1
+              droneName = groupName + str(Drone.droneCount)
+              unitVec = CircleZ(i, numDrones)
+              unitVec.normalize()
+              relPos = unitVec * radius * 250
+              Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
+         self.orbitPivots.append((pivot, 0.02))
 
-    def DrawCircleYDefense(self, centralObject, droneName, step, numDrones, radius = 1):
-         unitVec = CircleY(step, numDrones)
-         unitVec.normalize()
-         relPos = unitVec * radius * 250
-         pivot = self.render.attachNewNode(droneName + "-pivot")
-         pivot.setPos(centralObject.modelNode.getPos())
-         Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
-         self.orbitPivots.append((pivot, 0.2))
+    def DrawCircleYDefense(self, centralObject, groupName, numDrones, radius = 1):
+         pivot = centralObject.modelNode.attachNewNode(groupName + "-pivot")
+         pivot.setScale(self.render, 1)
+         pivot.setPos(0, 0, 0)
+         pivot.setP(random.uniform(0, 360))
+         pivot.setR(random.uniform(0, 360))
+         for i in range(numDrones):
+              Drone.droneCount += 1
+              droneName = groupName + str(Drone.droneCount)
+              unitVec = CircleY(i, numDrones)
+              unitVec.normalize()
+              relPos = unitVec * radius * 250
+              Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
+         self.orbitPivots.append((pivot, 0.02))
 
-    def DrawCircleXDefense(self, centralObject, droneName, step, numDrones, radius = 1):
-         unitVec = CircleX(step, numDrones)
-         unitVec.normalize()
-         relPos = unitVec * radius * 250
-         pivot = self.render.attachNewNode(droneName + "-pivot")
-         pivot.setPos(centralObject.modelNode.getPos())
-         Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
-         self.orbitPivots.append((pivot, 0.2))  
+    def DrawCircleXDefense(self, centralObject, groupName, numDrones, radius = 1):
+         pivot = centralObject.modelNode.attachNewNode(groupName + "-pivot")
+         pivot.setScale(self.render, 1)
+         pivot.setPos(0, 0, 0)
+         pivot.setP(random.uniform(0, 360))
+         pivot.setR(random.uniform(0, 360))
+         for i in range(numDrones):
+              Drone.droneCount += 1
+              droneName = groupName + str(Drone.droneCount)
+              unitVec = CircleX(i, numDrones)
+              unitVec.normalize()
+              relPos = unitVec * radius * 250
+              Drone(self.loader, "./Assets/DroneDefender/DroneDefender.obj", pivot, droneName, "./Assets/DroneDefender/octotoad1_auv.png", relPos, 5)
+         self.orbitPivots.append((pivot, 0.02))  
     def drawRockRing(self, centralObject, rockName, numRocks, radius = 1):
-        pivot = self.render.attachNewNode(rockName + "-pivot")
-        pivot.setPos(centralObject.modelNode.getPos())
+        pivot = centralObject.modelNode.attachNewNode(rockName + "-pivot")
+        pivot.setScale(self.render, 1)
+        pivot.setPos(0, 0, 0)
+        pivot.setP(random.uniform(0, 360))
+        pivot.setR(random.uniform(0, 360))
         totalRocks = numRocks * 10 
         for i in range(totalRocks):
             unitVec = RockRing(i, totalRocks, radius)
             relPos = unitVec * radius * 62.75
             Rock(self.loader, "./Assets/Rock/Rock.x", pivot, rockName + str(i), "./Assets/Rock/Rock.png", relPos, 60)
-        self.orbitPivots.append((pivot, 0.1))
+        self.orbitPivots.append((pivot, 0.01))
+
+    def launchRock(self, task):
+        rocks = self.render.findAllMatches("**/Rock*")
+        if not rocks.isEmpty():
+            rock = rocks[random.randint(0, rocks.getNumPaths() - 1)]
+            if "-pivot" in rock.getParent().getName():
+                playerPos = self.Player.modelNode.getPos(self.render)
+                rockPos = rock.getPos(self.render)
+                trajectory = playerPos - rockPos
+                trajectory.normalize()
+                rock.wrtReparentTo(self.render)
+                taskMgr.add(self.rockShooting, rock.getName() + "-fly", extraArgs=[rock, trajectory], appendTask=True)
+        
+        return task.again
+
+    def rockShooting(self, rockNode, trajectory, task):
+        if rockNode.isEmpty():
+            return task.done
+        speed = 15.0
+        rockNode.setPos(rockNode.getPos() + trajectory * speed)
+        if rockNode.getDistance(self.Player.modelNode) > 15000:
+            rockNode.removeNode()
+            return task.done
+            
+        return task.cont
+          
 
     def updateAllOrbits(self, task):
         for node, speed in self.orbitPivots:
@@ -181,10 +264,9 @@ class MyApp(ShowBase):
          self.camera.setFluidPos(0,1,0)
                
 
-
 class PoorlyRenderedUniverse(InverseSphereCollideObject):
       def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(PoorlyRenderedUniverse,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.3)
+          super(PoorlyRenderedUniverse,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),.8)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
@@ -192,7 +274,7 @@ class PoorlyRenderedUniverse(InverseSphereCollideObject):
           self.modelNode.setTexture(tex,1)
 class GalaxyPlanet(SphereCollideObject): 
      def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
-          super(GalaxyPlanet,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.1)
+          super(GalaxyPlanet,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1.0)
           self.modelNode.setPos(posVec)
           self.modelNode.setScale(scaleVec)
           self.modelNode.setName(nodeName)
@@ -204,7 +286,7 @@ class GalaxyPlanet(SphereCollideObject):
           return Task.cont
 class Player(SphereCollideObject, DirectObject):
      def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float, traverser):
-          super(Player,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),0.5)
+          super(Player,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),3)
           DirectObject.__init__(self)
           self.loader = loader
           self.modelNode.setPos(posVec)
@@ -224,7 +306,7 @@ class Player(SphereCollideObject, DirectObject):
           self.traverser = traverser
           self.handler = CollisionHandlerEvent()
           self.handler.addInPattern('into')
-          ## self.accept('into', self.HandleInto)
+          self.accept('into', self.HandleInto)
           self.EnableHUD()
           ## self.SetParticles()
      def checkIntervals(self, task):
@@ -334,7 +416,7 @@ class Player(SphereCollideObject, DirectObject):
                  aim = self.render.getRelativeVector(self.modelNode, Vec3.forward())
                  aim.normalize()
                  fireSolution = aim * travRate
-                 inFront = aim*150
+                 inFront = aim*300
                  travVec = fireSolution + self.modelNode.getPos()
                  self.missileBay -= 1
                  tag = 'Missile-' + str(Missile.missileCount)
@@ -361,32 +443,32 @@ class Player(SphereCollideObject, DirectObject):
            from direct.gui.OnscreenImage import OnscreenImage
            self.Hud = OnscreenImage(image = "./Assets/Hud/Reticle3b.png", pos = Vec3(0,0,0), scale = 0.1)
            self.Hud.setTransparency(TransparencyAttrib.MAlpha)
-     ## def HandleInto(self, entry):
-     ##      fromNode = entry.getFromNodePath().getName()
-     ##      print("fromNode: " + fromNode)
-     ##      intoNode = entry.getIntoNodePath().getName()
-     ##      print("intoNode: " + intoNode)
-     ##      intoPosition = Vec3(entry.getSurfacePoint(self.render))
-     ##      tempVar = fromNode.split("_")
-     ##      print("tempVar: " + str(tempVar))
-     ##      shooter = tempVar[0]
-     ##      print("Shooter: " + str(shooter))
-     ##      tempVar = intoNode.split("_")
-     ##      print("TempVar1: " + str(tempVar))
-     ##      victim = tempVar[0]
-     ##      print("Victim: " + str(victim))
-     ##      pattern = r'[0-9]'
-     ##      strippedString = re.sub(pattern, '', victim)
-     ##      if (strippedString == "Drone" or strippedString == "Planet" or strippedString == "Space Station"):
-     ##            print(victim, " was hit at ", intoPosition)
-     ##            self.DestroyObject(victim, intoPosition)
-     ##      print(shooter  + "is done shooting.")
-     ##      Missile.Intervals[shooter].finish()
-     ## def DestroyObject(self, hitID, hitPosition):
-     ##     nodeID = self.render.find(hitID)
-     ##     nodeID.detachNode()
-     ##     self.explodeNode.setPos(hitPosition)
-     ##     self.Explode()
+     def HandleInto(self, entry):
+           fromNode = entry.getFromNodePath().getName()
+           print("fromNode: " + fromNode)
+           intoNode = entry.getIntoNodePath().getName()
+           print("intoNode: " + intoNode)
+           intoPosition = Vec3(entry.getSurfacePoint(self.render))
+           tempVar = fromNode.split("_")
+           print("tempVar: " + str(tempVar))
+           shooter = tempVar[0]
+           print("Shooter: " + str(shooter))
+           tempVar = intoNode.split("_")
+           print("TempVar1: " + str(tempVar))
+           victim = tempVar[0]
+           print("Victim: " + str(victim))
+           pattern = r'[0-9]'
+           strippedString = re.sub(pattern, '', victim)
+           validTargets = ["Drone", "Planet", "Space Station", "Rock", "Cloud", "Seams", "CircleX", "CircleY", "CircleZ"]
+           if strippedString in validTargets:
+                 print(victim, " was hit at ", intoPosition)
+                 self.DestroyObject(victim, intoPosition)
+           print(shooter  + "is done shooting.")
+           Missile.Intervals[shooter].finish()
+     def DestroyObject(self, hitID, hitPosition):
+          nodeID = self.render.find("**/" + hitID)
+          if not nodeID.isEmpty():
+               nodeID.detachNode()
      ## def Explode(self):
      ##      self.cntExplode += 1
      ##      tag = 'particles-' + str(self.cntExplode)
@@ -432,6 +514,23 @@ class Rock(SphereCollideObject):
           self.modelNode.setName(nodeName)
           tex = loader.loadTexture(texPath)
           self.modelNode.setTexture(tex,1)
+class Wanderer(SphereCollideObject):
+      numWanderers = 0
+      def __init__(self, loader: Loader, modelPath: str, parentNode: NodePath, modelName: str,  scaleVec: Vec3,texPath: str, staringAt: Vec3):
+          super(Wanderer,self).__init__(loader,modelPath,parentNode,modelName, Vec3(0,0,0),3.2)
+          self.modelNode.setScale(scaleVec)
+          tex = loader.loadTexture(texPath)
+          self.modelNode.setTexture(tex,1)
+          self.staringAt = staringAt
+          Wanderer.numWanderers += 1
+          startPos = Vec3(random.uniform(-5000, 5000), random.uniform(2000, 8000), random.uniform(-2000, 2000))
+          randPath1 = Vec3(random.uniform(-5000, 5000), random.uniform(2000, 8000), random.uniform(-2000, 2000))
+          randPath2 = Vec3(random.uniform(-5000, 5000), random.uniform(2000, 8000), random.uniform(-2000, 2000))
+          posInterval0 = self.modelNode.posInterval(15, randPath1, startPos = startPos)
+          posInterval1 = self.modelNode.posInterval(20, randPath2, startPos = randPath1)
+          posInterval2 = self.modelNode.posInterval(20, startPos, startPos = randPath2)
+          self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, name = modelName + str(Wanderer.numWanderers))
+          self.travelRoute.loop()
 
 class Missile(SphereCollideObject):
       fireModels = {}
@@ -452,5 +551,14 @@ class Missile(SphereCollideObject):
           Missile.collisionSolids[nodeName] = self.collisionNode.node().getSolid(0)
           Missile.cNodes[nodeName].show()
           print("Fire torpedo #" + str(Missile.missileCount))
+class Sun(SphereCollideObject):
+      def __init__(self,loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
+          super(Sun,self).__init__(loader,modelPath,parentNode,nodeName, Vec3(0,0,0),1)
+          self.modelNode.setPos(posVec)
+          self.modelNode.setScale(scaleVec)
+          self.modelNode.setName(nodeName)
+          tex = loader.loadTexture(texPath)
+          self.modelNode.setTexture(tex,1)
+
 app = MyApp()
 app.run()
