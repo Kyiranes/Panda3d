@@ -2,7 +2,7 @@
 from direct.showbase.ShowBase import ShowBase, taskMgr
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import Vec3, NodePath, Loader, PandaNode, CollisionNode, CollisionSphere, CollisionCapsule, CollisionTraverser, CollisionHandlerPusher, CollisionInvSphere
-from panda3d.core import TransparencyAttrib, CollisionHandlerEvent, CardMaker, TextureStage, Geom, GeomTriangles, ClockObject
+from panda3d.core import TransparencyAttrib, CollisionHandlerEvent, ClockObject
 from direct.interval.IntervalGlobal import Sequence
 import re,time
 from direct.task import Task
@@ -83,6 +83,7 @@ class SphereCollideObject(CollidableObject):
 class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+        self.globalClock = ClockObject.getGlobalClock()
         self.orbitPivots = []
         self.Universe = PoorlyRenderedUniverse(self.loader, "./Assets/Universe/Universe.x",self.render,"Universe","./Assets/Universe/Universe.jpg",(0,0,0), 20000)
         self.Sun = Sun(self.loader, "./Assets/Sun/sun.x", self.render, "Sun", "./Assets/Sun/sun.jpg", (7000, 0, 3000), 1500)
@@ -138,8 +139,8 @@ class MyApp(ShowBase):
         self.DrawBaseballSeams(self.Planet3, "Seams2", fullCycle, 2)
         self.DrawCircleZDefense(self.Planet4, "CircleZ", fullCycle, 2)
         fps_limit = 60
-        globalClock.setMode(ClockObject.MLimited)
-        globalClock.setFrameRate(fps_limit)
+        self.globalClock.setMode(ClockObject.MLimited)
+        self.globalClock.setFrameRate(fps_limit)
     def quit(self):
             sys.exit()
     def DrawBaseballSeams(self, centralObject, groupName, numDrones, radius = 1):
@@ -228,7 +229,7 @@ class MyApp(ShowBase):
         self.orbitPivots.append((pivot, 0.01))
 
     def launchRock(self, task):
-        rocks = self.render.findAllMatches("**/Rock*")
+        rocks = self.render.findAllMatches("**/*Rock*")
         if not rocks.isEmpty():
             rock = rocks[random.randint(0, rocks.getNumPaths() - 1)]
             if "-pivot" in rock.getParent().getName():
@@ -244,8 +245,8 @@ class MyApp(ShowBase):
     def rockShooting(self, rockNode, trajectory, task):
         if rockNode.isEmpty():
             return task.done
-        speed = 15.0
-        rockNode.setPos(rockNode.getPos() + trajectory * speed)
+        speed = 400.0
+        rockNode.setPos(rockNode.getPos() + trajectory * speed * self.globalClock.getDt())
         if rockNode.getDistance(self.Player.modelNode) > 15000:
             rockNode.removeNode()
             return task.done
@@ -459,7 +460,7 @@ class Player(SphereCollideObject, DirectObject):
            print("Victim: " + str(victim))
            pattern = r'[0-9]'
            strippedString = re.sub(pattern, '', victim)
-           validTargets = ["Drone", "Planet", "Space Station", "Rock", "Cloud", "Seams", "CircleX", "CircleY", "CircleZ"]
+           validTargets = ["Drone", "Planet", "Space Station", "Rock", "Cloud", "Seams", "CircleX", "CircleY", "CircleZ", "PlanetRock", "SunRock"]
            if strippedString in validTargets:
                  print(victim, " was hit at ", intoPosition)
                  self.DestroyObject(victim, intoPosition)
